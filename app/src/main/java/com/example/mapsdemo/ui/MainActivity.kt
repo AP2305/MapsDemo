@@ -33,7 +33,6 @@ class MainActivity : BaseActivity(), PlacesListAdapter.OnOptionSelected {
 
         mBinding.btnGetDirections.setOnClickListener {
             val intent = Intent(this@MainActivity, DirectionsActivity::class.java)
-            intent.putExtra(Constants.DATA, mAdapter.list)
             startActivity(intent)
         }
 
@@ -62,7 +61,7 @@ class MainActivity : BaseActivity(), PlacesListAdapter.OnOptionSelected {
     }
 
     private fun loadLocations() {
-        val list = database.placesDao().getAll()
+         val list = database.placesDao().getAll()
         mAdapter = PlacesListAdapter(this)
         mAdapter.setList(arrayListOf<PlaceModel>().apply { addAll(list) })
         mBinding.rvLocations.adapter = mAdapter

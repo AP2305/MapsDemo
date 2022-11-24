@@ -30,7 +30,7 @@ class SearchLocationActivity : BaseActivity(), PlacesAutoCompleteAdapter.ClickLi
     private val filterTextWatcher: TextWatcher = object : TextWatcher {
         override fun afterTextChanged(s: Editable) {
             if (s.toString() != "") {
-                mAdapter.getFilter().filter(s.toString())
+                mAdapter.filter.filter(s.toString())
                 if (mBinding.rvPlaces.visibility == View.GONE) {
                     mBinding.rvPlaces.visibility = View.VISIBLE
                 }
@@ -80,7 +80,6 @@ class SearchLocationActivity : BaseActivity(), PlacesAutoCompleteAdapter.ClickLi
                 finish()
             }
 
-
         }
 
         initDb()
@@ -129,6 +128,7 @@ class SearchLocationActivity : BaseActivity(), PlacesAutoCompleteAdapter.ClickLi
                 .add(
                     if (markedPlace != null) {
                         markedPlace?.address = place.address
+                        markedPlace?.id = place.id
                         markedPlace?.latitude = place.latLng.latitude
                         markedPlace?.longitude = place.latLng.longitude
                         markedPlace!!

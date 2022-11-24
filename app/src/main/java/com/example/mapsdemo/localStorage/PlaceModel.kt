@@ -14,6 +14,8 @@ class PlaceModel : java.io.Serializable {
 
     @ColumnInfo(name = "address")
     var address: String? = ""
+    @ColumnInfo(name = "id")
+    var id: String = ""
     @ColumnInfo(name = "lat")
     var latitude: Double = 0.0
     @ColumnInfo(name = "long")
