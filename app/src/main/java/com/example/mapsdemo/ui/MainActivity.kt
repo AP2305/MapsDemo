@@ -1,22 +1,23 @@
 package com.example.mapsdemo.ui
 
 import android.content.Intent
-import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.view.View
-import android.widget.LinearLayout
 import androidx.recyclerview.widget.LinearLayoutManager
-import androidx.room.Room
+import com.example.mapsdemo.R
 import com.example.mapsdemo.databinding.ActivityMainBinding
 import com.example.mapsdemo.localStorage.PlaceModel
-import com.example.mapsdemo.localStorage.PlacesDB
 import com.example.mapsdemo.ui.adapter.PlacesListAdapter
 import com.example.mapsdemo.utils.Constants
+import com.example.mapsdemo.utils.SortPlaces
+import com.google.android.gms.maps.model.LatLng
+import java.util.*
 
 class MainActivity : BaseActivity(), PlacesListAdapter.OnOptionSelected {
 
     private lateinit var mBinding: ActivityMainBinding
     private lateinit var mAdapter: PlacesListAdapter
+    private var sorting = "NA"
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -34,6 +35,23 @@ class MainActivity : BaseActivity(), PlacesListAdapter.OnOptionSelected {
         mBinding.btnGetDirections.setOnClickListener {
             val intent = Intent(this@MainActivity, DirectionsActivity::class.java)
             startActivity(intent)
+        }
+
+        mBinding.ivSort.setOnClickListener {
+            when (sorting) {
+                "NA", "D" -> {
+                    sorting = "A"
+                    mBinding.ivSort.setImageResource(R.drawable.ic_arrow_up)
+                }
+                "A" -> {
+                    sorting = "D"
+                    mBinding.ivSort.setImageResource(R.drawable.ic_arrow_down)
+                }
+                else -> {
+                    mBinding.ivSort.setImageResource(R.drawable.ic_sort)
+                }
+            }
+            loadLocations()
         }
 
         mBinding.rvLocations.layoutManager = LinearLayoutManager(this)
@@ -61,8 +79,28 @@ class MainActivity : BaseActivity(), PlacesListAdapter.OnOptionSelected {
     }
 
     private fun loadLocations() {
-         val list = database.placesDao().getAll()
+        var list: List<PlaceModel> = emptyList()
         mAdapter = PlacesListAdapter(this)
+        when (sorting) {
+            "NA" -> {
+                list = database.placesDao().getAll()
+            }
+            "A" -> {
+                list = database.placesDao().getAll()
+                Collections.sort(
+                    list,
+                    SortPlaces(LatLng(list.first().latitude, list.first().longitude))
+                )
+            }
+            "D" -> {
+                list = database.placesDao().getAll()
+                Collections.sort(
+                    list,
+                    SortPlaces(LatLng(list.first().latitude, list.first().longitude))
+                )
+                list = list.reversed()
+            }
+        }
         mAdapter.setList(arrayListOf<PlaceModel>().apply { addAll(list) })
         mBinding.rvLocations.adapter = mAdapter
         mBinding.btnGetDirections.visibility = if (list.size > 1) {

@@ -7,16 +7,15 @@ import com.example.mapsdemo.databinding.ActivitySearchLocationBinding
 import com.example.mapsdemo.localStorage.PlaceModel
 import com.example.mapsdemo.utils.Constants
 import com.example.mapsdemo.utils.FetchURL
+import com.example.mapsdemo.utils.SortPlaces
 import com.example.mapsdemo.utils.TaskLoadedCallback
+import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.GoogleMap
 import com.google.android.gms.maps.OnMapReadyCallback
 import com.google.android.gms.maps.SupportMapFragment
-import com.google.android.gms.maps.model.LatLng
-import com.google.android.gms.maps.model.MarkerOptions
-import com.google.android.gms.maps.model.Polyline
-import com.google.android.gms.maps.model.PolylineOptions
+import com.google.android.gms.maps.model.*
 import com.google.android.libraries.places.api.Places
-import java.io.*
+import java.util.*
 
 
 class DirectionsActivity : BaseActivity(), OnMapReadyCallback, TaskLoadedCallback {
@@ -83,24 +82,49 @@ class DirectionsActivity : BaseActivity(), OnMapReadyCallback, TaskLoadedCallbac
         return "https://maps.googleapis.com/maps/api/directions/$output?$parameters&key=" + Constants.MAPS_API_KEY
     }
 
-    private fun getDirectionsUrl(origin: LatLng, dest: LatLng,markerPoints : List<PlaceModel>): String? {
-        val str_origin = "origin=" + origin.latitude + "," + origin.longitude
-        val str_dest = "destination=" + dest.latitude + "," + dest.longitude
+    private fun getDirectionsUrl(
+        markerPoints: List<PlaceModel>
+    ): String? {
+        val str_origin =
+            "origin=" + markedPlaces?.first()?.latitude + "," + markedPlaces?.first()?.longitude
+        val str_dest =
+            "destination=" + markedPlaces?.last()?.latitude + "," + markedPlaces?.last()?.longitude
         val sensor = "sensor=false"
         var waypoints = ""
-        for (i in 2 until markerPoints.size()) {
-            val point = LatLng(markerPoints[i].latitude,markerPoints[i].longitude)
-            if (i == 2) waypoints = "waypoints="
+        for (i in 1 until markerPoints.size - 1) {
+            val point = LatLng(markerPoints[i].latitude, markerPoints[i].longitude)
+            if (i == 1) waypoints = "waypoints="
             waypoints += point.latitude.toString() + "," + point.longitude + "|"
         }
-        val parameters = "$str_origin&$str_dest&$sensor&$waypoints"
+        val parameters = "$str_origin&$str_dest&rankBy=distance&$sensor&$waypoints"
         val output = "json"
-        return "https://maps.googleapis.com/maps/api/directions/$output?$parameters"
+        return "https://maps.googleapis.com/maps/api/directions/$output?$parameters&key=" + Constants.MAPS_API_KEY
     }
 
     override fun onMapReady(p0: GoogleMap) {
         googleMap = p0
-        Log.d("mylog", "Added Markers");
+        Log.d("mylog", "Added Markers")
+
+        for (p in markedPlaces!!) {
+            Log.i("Places before sorting", "Place: " + p.latitude)
+        }
+
+        Collections.sort(
+            markedPlaces!!,
+            SortPlaces(LatLng(markedPlaces?.first()!!.latitude, markedPlaces?.first()!!.longitude))
+        )
+
+        for (p in markedPlaces!!) {
+            Log.i("Places after sorting", "Place: " + p.latitude)
+        }
+
+        googleMap?.animateCamera(
+            CameraUpdateFactory.newCameraPosition(
+                CameraPosition.Builder().target(
+                    LatLng(markedPlaces?.first()!!.latitude, markedPlaces?.first()!!.longitude)
+                ).zoom(12f).build()
+            )
+        )
         for (i in 0 until markedPlaces!!.size - 1)
             drawRoute(markedPlaces!![i], markedPlaces!![i + 1])
     }
@@ -120,7 +144,7 @@ class DirectionsActivity : BaseActivity(), OnMapReadyCallback, TaskLoadedCallbac
         ).title("Location 2")
         googleMap?.addMarker(place1)
         googleMap?.addMarker(place2)
-        FetchURL(this).execute(getUrl(place1.position, place2.position, "driving"), "driving")
+        FetchURL(this).execute(getDirectionsUrl(markedPlaces!!), "driving")
     }
 
     override fun onTaskDone(vararg values: Any?) {
